@@ -21,11 +21,11 @@ double U[N][5] = {0}; //Conservative prop.
 //double Flux_R[N][5] = {0};
 
 
-double end_time = 0.4;
-double t = 0.01;
+double end_time = 0.1;
+double t = 0.0;
 int limiter = 0;
 double dx = Leng/N_In; 
-double dt = 0.0;
+double dt;
 
 // --- Trick ---
 struct vec5
@@ -59,6 +59,8 @@ vec5 Conserved2Primitive( double U[5] )
     W.u[3] = U[3]/U[0];
     W.u[4] = ComputePressure( U[0], U[1], U[2], U[3], U[4] );
     
+    //printf("c2p = %f,%f,%f,%f,%f\n",W.u[0],W.u[1],W.u[2],W.u[3],W.u[4]);
+
     return W ;
 }
 // -------------------------------------------------------------------
@@ -74,18 +76,19 @@ vec5 Primitive2Conserved( double W[5] )
     U.u[3] = W[0]*W[3];
     U.u[4] = W[4]/(gamma_val-1.0) + 0.5*W[0]*( W[1]*W[1] + W[2]*W[2] + W[3]*W[3] );
 
+    //printf("p2c = %f,%f,%f,%f,%f\n",U.u[0],U.u[1],U.u[2],U.u[3],U.u[4]);
     return U;
 }
 
 vec5 Conserved2Flux( double U[5] )
 {
     vec5 flux = {0};
-    double U_temp[5] = {0}; 
+    //double U_temp[5] = {0}; 
 
     double P = 0;
     P = ComputePressure( U[0], U[1], U[2], U[3], U[4] );
     
-    double u = {0};
+    double u = {1};
     u = U[1] / U[0];
 
     flux.u[0] = U[1];
@@ -94,6 +97,8 @@ vec5 Conserved2Flux( double U[5] )
     flux.u[3] = u*U[3];
     flux.u[4] = u*( U[4] + P );
 
+
+    //printf("C2F = %f,%f,%f,%f,%f\n",flux.u[0],flux.u[1],flux.u[2],flux.u[3],flux.u[4]);
     return flux;
 }
 // -------------------------------------------------------------------
@@ -220,6 +225,7 @@ vec5 ComputeLimitedSlope(double L[5], double C[5], double R[5] )
 
 vec5 Roe( double L[5], double R[5] )
 {
+    //printf("input L=%f,%f,%f,%f,%f\n",L[0],L[1],L[2],L[3],L[4]);
     vec5 flux;
 
     //compute the enthalpy of the left and right states: H = (E+P)/rho
@@ -257,10 +263,10 @@ vec5 Roe( double L[5], double R[5] )
     // compute the eigenvalues and right eigenvector matrix
     double EigenValue[5]    = {u-a, u, u, u, u+a};
     double EigenVector_R[5][5] = {{1.0, u-a,   v,   w,  H-u*a},
-                                {1.0,   u,   v,   w, 0.5*V2},
-                                {0.0, 0.0, 1.0, 0.0,      v},
-                                {0.0, 0.0, 0.0, 1.0,      w},
-                                {1.0, u+a,   v,   w,  H+u*a}};
+                                 {1.0,   u,   v,   w, 0.5*V2},
+                                 {0.0, 0.0, 1.0, 0.0,      v},
+                                 {0.0, 0.0, 0.0, 1.0,      w},
+                                 {1.0, u+a,   v,   w,  H+u*a}};
     //#printf("debug : after eigenvalue\n");
     //compute the fluxes of the left and right states
     double flux_L[5] = {0};
@@ -275,28 +281,24 @@ vec5 Roe( double L[5], double R[5] )
         flux_R[i] = flux_R_temp.u[i];
     }
     
-    //printf("debug : before compute Roe flux\n");
     //compute the Roe flux
     for(int i=0; i<5; i++){
         amp[i] = amp[i]*abs(EigenValue[i]);
-    }
-    //double amp *= np.abs( EigenValue );
-    //double flux = 0.5*( flux_L + flux_R ) - 0.5*amp.dot( EigenVector_R );
-    
-    
+    } 
+
     double temp[5] ={0}; //a temporary storeing matrix multipycation 
     for(int i=0; i<5; i++){
         for(int j=0; j<5; j++){
-            temp[i] += amp[j]*EigenVector_R[i][j];
+            temp[i] += amp[j]*EigenVector_R[j][i];
         }
     }
     
-    //printf("debug : before compute Roe flux 2 \n");
     for(int i; i<5; i++)
     {
         flux.u[i] = 0.5*( flux_L[i] + flux_R[i] ) - 0.5*temp[i];
+        printf("flux[%d] = %f\n",i,flux.u[i]);   
     }
-    //printf("before return flux %f\n",t);
+
     return flux;
     
 }
@@ -316,26 +318,22 @@ vecLR DataReconstruction_PLM( double U[N][5] )
         for(int i=0; i<5; i++)
         {
             W_ttemp[i] = U[pos][i];
+            //printf("W_ttemp[%d]=%f \n", i, W_ttemp[i]);
         }
         
         vec5 W_temp;
         W_temp = Conserved2Primitive(W_ttemp);
         for(int i=0; i<5; i++)
         {
-            W[pos][i]=W_temp.u[i];
+            W[pos][i]=W_temp.u[i];//correct
+            //printf("drc = %f\n",W[pos][i]);
         }
     }
     
     for(int pos=1; pos<N-1; pos++)
     {    
         // compute the left and right states of each cell
-        double W_minus[5];
-        //W_minus = {W[pos-1][0],W[pos-1][1],W[pos-1][2],W[pos-1][3],W[pos-1][4]}; 
-        double W_equal[5];
-        //W_equal = {W[pos][0],W[pos][1],W[pos][2],W[pos][3],W[pos][4]} ;
-        double W_plus[5];
-        //W_plus  = {W[pos+1][0],W[pos+1][1],W[pos+1][2],W[pos+1][3],W[pos+1][4]};
-
+        double W_minus[5], W_equal[5], W_plus[5];
         for(int i=0; i<5; i++)
         {
             W_minus[i] = W[pos-1][i];
@@ -351,25 +349,30 @@ vecLR DataReconstruction_PLM( double U[N][5] )
         {
         LR.L[pos][i] = W[pos][i] -0.5*slope_limited.u[i];
         LR.R[pos][i] = W[pos][i] -0.5*slope_limited.u[i];
+        //printf("LR.R=%f\n",LR.R[pos][i]);
+        //LR.R here is correct
         
-
         // ensure face-centered variable lie between nearby volume-average (~cell-centered)
-        LR.L[pos][i] = max( LR.L[pos][i], min(W[pos-1][i], W[pos][i]));
-        LR.L[pos][i] = min( LR.L[pos][i], max(W[pos-1][i], W[pos][i]));
+        LR.L[pos][i] = max( LR.L[pos][i], min(W[pos-1][i], W[pos][i]) );
+        LR.L[pos][i] = min( LR.L[pos][i], max(W[pos-1][i], W[pos][i]) );
         LR.R[pos][i] = 2.0*W[pos][i] - LR.L[pos][i];
 
-        LR.R[pos][i] = max( LR.R[pos][i], min(W[pos+1][i], W[pos][i]));
-        LR.R[pos][i] = min( LR.R[pos][i], max(W[pos+1][i], W[pos][i]));
+        LR.R[pos][i] = max( LR.R[pos][i], min(W[pos+1][i], W[pos][i]) );
+        LR.R[pos][i] = min( LR.R[pos][i], max(W[pos+1][i], W[pos][i]) );
         LR.L[pos][i] = 2.0*W[pos][i] - LR.R[pos][i];
+        //printf("%f  ",LR.L[pos][i]);
+        //printf("drc LR.R = %f\n", LR.R[pos][i]);//here is still correct
         }
         // primitve variables -> conserved variables
         
         double L_ttemp[5] = {0};
-        double R_ttemp[5] = {0};
-        for(int i=0; i<N; i++)
+        double R_ttemp[5] = {1};
+
+        for(int i=0; i<5; i++) //"prob from here"
         {
             L_ttemp[i] = LR.L[pos][i];
-            R_ttemp[i] = LR.R[pos][i];
+            R_ttemp[i] = LR.R[pos][i]; // here worng "fixed"
+            //printf("drc LR.R=%f\n",R_ttemp[i]);
         }
 
         vec5 L_temp = Primitive2Conserved(L_ttemp);
@@ -379,31 +382,34 @@ vecLR DataReconstruction_PLM( double U[N][5] )
         {
             LR.L[pos][i] = L_temp.u[i];
             LR.R[pos][i] = R_temp.u[i];
+            //printf("LR.L=%f\n",LR.L[pos][i]);
+            //printf("LR.R=%f\n",LR.R[pos][i]); //Promblems before here.
         }
     
     }
     return LR;
 }
-/*
-int main()
-{
-    return 0;
-}
-*/
+
 //----------------------------------------------------------------
 int main()
 {
+    double x;
     for(int pos=0; pos<N; pos++)
     {
         vec5 dd = {0};
-        dd = InitialCondition(pos*dx);
+        x = (pos + 0.5) * dx;
+        if(pos>=nghost and pos<=N-nghost)
+        {
+            dd = InitialCondition(x);
+        }
+        
         for(int i=0; i<5; i++)
         {
             U[pos][i] = dd.u[i];
         }
     }
     
-    while (t > 0)
+    while (t >= 0)
     {
         // Set boundary condition
         BoundaryCondition( U );
@@ -417,7 +423,6 @@ int main()
         LR = DataReconstruction_PLM( U );
 
         //updat the face-center variales by 0.5*dt
-        vec5 Flux_L, Flux_R;
         for(int pos=1; pos<N-1; pos++)
         {
             double L_temp[5], R_temp[5];
@@ -425,15 +430,17 @@ int main()
             {
                 L_temp[i] = LR.L[pos][i];
                 R_temp[i] = LR.R[pos][i];
+                //printf("LR.L=%f\n",LR.L[pos][i]);
             }
-
+            vec5 Flux_L, Flux_R;
             Flux_L = Conserved2Flux(L_temp);
             Flux_R = Conserved2Flux(R_temp);
             double dflux[5] = {0};
         
             for(int i; i<5; i++)
             {
-            dflux[i] = 0.5*dt*dx*(Flux_R.u[i]-Flux_L.u[i]);
+            dflux[i] = 0.5*dt/dx*(Flux_R.u[i]-Flux_L.u[i]);
+            //printf("dflux[%d] = %f\n",i,dflux[i]);
             LR.L[pos][i] -= dflux[i];
             LR.R[pos][i] -= dflux[i];
             }
@@ -450,28 +457,27 @@ int main()
                 R_temp[i] = LR.R[pos-1][i];
                 L_temp[i] = LR.L[pos][i];
             }
+            // R_temp is the LEFT state at the j+1/2 interface
             vec5 flux_temp = {0};
-            //printf("debug : before Roe solver\n");
             flux_temp = Roe(R_temp, L_temp);
-            //printf("debug : after Roe solver");
+
             for(int i=0; i<5; i++)
             {
                 flux[pos][i] = flux_temp.u[i];
             }
             
         }
-        //printf("debug : update variable\n");
+
         // update the volume-averaged input variables by dt
         for(int pos= nghost; pos<N-nghost; pos++)
         {
             for(int i=0; i<5; i++)
             {
                 U[pos][i] -= dt/dx*(flux[pos+1][i]-flux[pos][i]);
+                //printf("f[%d] = %f, %f\n",i,flux[pos+1][i],flux[pos][i]);
             }
+           
         }
-
-        printf("t = %f\n",t);
-        printf("%f,%f,%f,%f,%f\n,",U[1][0],U[1][1],U[1][2],U[1][3],U[1][4]);
         // update time
         t = t + dt;
         if(t >= end_time)
