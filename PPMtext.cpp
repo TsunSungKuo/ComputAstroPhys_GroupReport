@@ -457,19 +457,25 @@ int main()
     output = fopen("output.txt","w");
     double x;
     double U[N][N][N][5];
-    for(int pos=0; pos<N; pos++)
+   for(int pos1=0; pos1<N; pos1++)
+    for(int pos2=0; pos2<N; pos1++)
+    for(int pos3=0; pos3<N; pos1++)
     {
+        {
+            {
         vec5 dd = {0};
-        x = (pos + 0.5) * dx;
-        if(pos>=nghost and pos<=N-nghost)
+        x = (pos1 + 0.5) * dx;
+        if((pos1>=nghost and pos1<=N-nghost )||( pos2>=nghost and pos2<=N-nghost  )||( pos2>=nghost and pos2<=N-nghost))
         {
             dd = InitialCondition(x);
         }
-        
+
         for(int i=0; i<5; i++)
         {
-            U[pos][pos][pos][i] = dd.u[i];
+            U[pos1][pos2][pos3][i] = dd.u[i];
         }
+    }
+    }
     }
     
     while (t >=0 )
