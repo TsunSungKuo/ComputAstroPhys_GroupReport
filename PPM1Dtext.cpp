@@ -359,6 +359,16 @@ void DataReconstruction_PPM( double U[N][5],double dt,double gamma_val,double dx
    //pressure
     U_n1[i][4]=U[i][4]-dt/dx*(gamma_val*U[i][4]*(d_dxyz[i][1])+U[i][1]*d_dxyz[i][4]);
      }
+     for(int i=2; i<N-2; i++){
+
+    //denaity
+    U[i][0]=U_n1[i][0];
+    //velosity_x
+    U[i][1]=U_n1[i][1];
+    //velosity_y
+   //pressure
+    U[i][4]=U_n1[i][4];
+     }
     BoundaryCondition( U );
 
     for(int i=2; i<N-2; i++){
