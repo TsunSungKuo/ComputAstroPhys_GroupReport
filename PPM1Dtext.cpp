@@ -11,7 +11,7 @@ const int nghost = 2;
 const int N = N_In + 2*nghost;
 
 double cfl = 1.0;
-double gamma = 5.0/3.0;
+double gamma_val = 5.0/3.0;
 double Leng = 1.0;
 double U[N][5] = {0}; //Conservative prop.
 
@@ -21,7 +21,7 @@ double end_time = 0.4;
 double t = 0.0;
 int limiter = 0;
 double dx = Leng/N_In; 
-double dt;
+double dt ;
 
 // --- Trick ---
 struct vec5
@@ -56,7 +56,7 @@ vec5 InitialCondition( double x )
         v = 0.0;  // velocity y
         w = 0.0;  // velocity z
         P = 5.0e2;  // pressure
-        // E = P/(gamma-1.0) + 0.5*d*( u*u + v*v + w*w );   // energy density
+        // E = P/(gamma_val-1.0) + 0.5*d*( u*u + v*v + w*w );   // energy density
     }
     else{
         d = 1.25e2;
@@ -64,7 +64,7 @@ vec5 InitialCondition( double x )
         v = 0.0;
         w = 0.0;
         P = 5.0;
-        // E = P/(gamma-1.0) + 0.5*d*( u*u + v*v + w*w );
+        // E = P/(gamma_val-1.0) + 0.5*d*( u*u + v*v + w*w );
     }
     //  conserved variables [0/1/2/3/4] <--> [density/momentum x/momentum y/momentum z/energy]
     vec5 dd = {0};
@@ -108,7 +108,7 @@ vec5 InitialCondition( double x )
 //     U.u[1] = W[0]*W[1];
 //     U.u[2] = W[0]*W[2];
 //     U.u[3] = W[0]*W[3];
-//     U.u[4] = W[4]/(gamma_val-1.0) + 0.5*W[0]*( W[1]*W[1] + W[2]*W[2] + W[3]*W[3] );
+//     U.u[4] = W[4]/(gamma_val_val-1.0) + 0.5*W[0]*( W[1]*W[1] + W[2]*W[2] + W[3]*W[3] );
 
 //     //printf("p2c = %f,%f,%f,%f,%f\n",U.u[0],U.u[1],U.u[2],U.u[3],U.u[4]);
 //     return U;
@@ -165,7 +165,7 @@ void BoundaryCondition( double U[N][5] )
 //     for(int pos=0; pos<N; pos++)
 //     {
 //         P[pos] = ComputePressure( U[pos][0], U[pos][1], U[pos][2], U[pos][3], U[pos][4] );
-//         a[pos] = sqrt( gamma_val*P[pos]/U[pos][0] );
+//         a[pos] = sqrt( gamma_val_val*P[pos]/U[pos][0] );
 //         u[pos] = abs( U[pos][1]/U[pos][0] );
 //         v[pos] = abs( U[pos][2]/U[pos][0] );
 //         w[pos] = abs( U[pos][3]/U[pos][0] );
@@ -206,7 +206,7 @@ void BoundaryCondition( double U[N][5] )
 //     double V2 = u*u + v*v + w*w;
 //     //check negative pressure
 //     //assert H-0.5*V2 > 0.0, "negative pressure!"
-//     double a  = sqrt( (gamma_val-1.0)*(H - 0.5*V2));
+//     double a  = sqrt( (gamma_val_val-1.0)*(H - 0.5*V2));
 
 //     //compute the amplitudes of different characteristic waves
 //     double dU[5];
@@ -216,7 +216,7 @@ void BoundaryCondition( double U[N][5] )
 //     double amp[5] = {0};
 //     amp[2] = dU[2] - v*dU[0];
 //     amp[3] = dU[3] - w*dU[0];
-//     amp[1] = (gamma_val-1.0)/(a*a)*( dU[0]*(H-u*u) + u*dU[1] - dU[4] + v*amp[2] + w*amp[3] );
+//     amp[1] = (gamma_val_val-1.0)/(a*a)*( dU[0]*(H-u*u) + u*dU[1] - dU[4] + v*amp[2] + w*amp[3] );
 //     amp[0] = (0.5/a)*( dU[0]*(u+a) - dU[1] - a*amp[1] );
 //     amp[4] = dU[0] - amp[0] - amp[1];
 
@@ -269,14 +269,15 @@ double ComputeLimitedSlope(double L, double C, double R )
     double slope_LR;
     double slope_limited;
 
-
+    double slope_LplusR;
     slope_L = C - L;
     slope_R = R - C;
+    slope_LplusR = (slope_L+slope_R)/2.;
     slope_LR = slope_L*slope_R;
         if(slope_LR>0.0 && slope_L>0.0 ){
-                slope_limited =min(abs(slope_L+slope_R)/2.,abs(slope_L),abs(slope_R));
+                slope_limited =std::min({abs(slope_LplusR),abs(slope_L),abs(slope_R)});
             }else if(slope_LR>0.0 && slope_L<0.0 ){
-                slope_limited = 0-min(abs(slope_L+slope_R)/2.,abs(slope_L),abs(slope_R));
+                slope_limited = -std::min({abs(slope_LplusR),abs(slope_L),abs(slope_R)});
             }else{
                 slope_limited = 0.0;
             }
@@ -303,9 +304,8 @@ void Computehalf(double a_jl,double a_j, double a_jr, double slopel,double slope
     a_jhalf[0]=a_jhl;
     a_jhalf[1]=a_jhr;
 }
-void DataReconstruction_PPM( double U[N][5],double dt,double gamma,double dx )
+void DataReconstruction_PPM( double U[N][5],double dt,double gamma_val,double dx )
 {
-//  allocate memory
     double U_n1[N][5]={0};
     double slope_x[N][5]={0};
 
@@ -314,6 +314,11 @@ void DataReconstruction_PPM( double U[N][5],double dt,double gamma,double dx )
     double d_dxyz[N][5]={0};
     double calmax[2];
     double a_jhalf[2]={0};
+
+
+ 
+//  allocate memory
+
     for(int num=0; num<5; num++){
 
     for(int k=1; k<N-1; k++){
@@ -352,17 +357,17 @@ void DataReconstruction_PPM( double U[N][5],double dt,double gamma,double dx )
     U_n1[i][1]=U[i][1]-dt/dx*(U[i][1]*d_dxyz[i][1]+d_dxyz[i][4]/U[i][0]);
     //velosity_y
    //pressure
-    U_n1[i][4]=U[i][4]-dt/dx*(gamma*U[i][4]*(d_dxyz[i][1])+U[i][1]*d_dxyz[i][4]);
+    U_n1[i][4]=U[i][4]-dt/dx*(gamma_val*U[i][4]*(d_dxyz[i][1])+U[i][1]*d_dxyz[i][4]);
      }
     BoundaryCondition( U );
-    for(int i=0; i<N; i++){
 
-
-    calmax[0]=pow(pow(U[i][1],2.)+pow(U[i][2],2.)+pow(U[i][3],2.),0.5)+gamma*U[i][4];
-    if(calmax[0]>calmax[1]){calmax[1]=calmax[0];}
+    for(int i=2; i<N-2; i++){
+       calmax[0]=pow(pow(U[i][1],2.)+pow(U[i][2],2.)+pow(U[i][3],2.),0.5)+gamma_val*U[i][4]/U[i][0];
+    if(calmax[0]>calmax[1]){
+        calmax[1]=calmax[0];}
     }
-
-    dt= 1./calmax[1];
+    dt = dx/calmax[1];
+ 
 
 }
 
@@ -407,6 +412,7 @@ int main()
 
 int main()
 {
+    double calmax[2];
     FILE *output;
     output = fopen("output.txt","w");
     double x;
@@ -425,7 +431,12 @@ int main()
             U[pos][i] = dd.u[i];
         }
     }
-    
+    for(int i=2; i<N-2; i++){
+       calmax[0]=pow(pow(U[i][1],2.)+pow(U[i][2],2.)+pow(U[i][3],2.),0.5)+gamma_val*U[i][4]/U[i][0];
+    if(calmax[0]>calmax[1]){
+        calmax[1]=calmax[0];}
+    }
+    dt = dx/calmax[1];
     while (t >=0 )
     {
         // Set boundary condition
@@ -435,7 +446,7 @@ int main()
 
 
 
-        DataReconstruction_PPM( U, dt, gamma, dx );
+        DataReconstruction_PPM( U, dt, gamma_val, dx );
         t=t+dt;
         fprintf( output, "t = %13.7e --> %13.7e, dt = %13.7e\n", t, t+dt, dt);
         printf("t = %13.7e --> %13.7e, dt = %13.7e\n", t, t+dt, dt);
