@@ -83,56 +83,7 @@ vec5 InitialCondition( double x )
 }
 
 
-// vec5 Conserved2Primitive( double U[5] )
-// {
-//     vec5 W = {0};
 
-//     W.u[0] = U[0];
-//     W.u[1] = U[1]/U[0];
-//     W.u[2] = U[2]/U[0];
-//     W.u[3] = U[3]/U[0];
-//     W.u[4] = ComputePressure( U[0], U[1], U[2], U[3], U[4] );
-    
-//     //printf("c2p = %f,%f,%f,%f,%f\n",W.u[0],W.u[1],W.u[2],W.u[3],W.u[4]);
-
-//     return W ;
-// }
-// -------------------------------------------------------------------
-// convert primitive variables to conserved variables
-// -------------------------------------------------------------------
-// vec5 Primitive2Conserved( double W[5] )
-// {
-//     vec5 U = {0};
-
-//     U.u[0] = W[0];
-//     U.u[1] = W[0]*W[1];
-//     U.u[2] = W[0]*W[2];
-//     U.u[3] = W[0]*W[3];
-//     U.u[4] = W[4]/(gamma_val_val-1.0) + 0.5*W[0]*( W[1]*W[1] + W[2]*W[2] + W[3]*W[3] );
-
-//     //printf("p2c = %f,%f,%f,%f,%f\n",U.u[0],U.u[1],U.u[2],U.u[3],U.u[4]);
-//     return U;
-// }
-
-// vec5 Conserved2Flux( double U[5] )
-// {
-//     vec5 flux = {0};
-
-//     double P = ComputePressure( U[0], U[1], U[2], U[3], U[4] );
-    
-//     double u = {1};
-//     u = U[1] / U[0];
-
-//     flux.u[0] = U[1];
-//     flux.u[1] = u*U[1] + P;
-//     flux.u[2] = u*U[2];
-//     flux.u[3] = u*U[3];
-//     flux.u[4] = u*( U[4] + P );
-
-
-//     //printf("C2F = %f,%f,%f,%f,%f\n",flux.u[0],flux.u[1],flux.u[2],flux.u[3],flux.u[4]);
-//     return flux;
-// }
 
 void BoundaryCondition( double U[N][5] )
 {
@@ -155,112 +106,7 @@ void BoundaryCondition( double U[N][5] )
     }
 }
 
-// -------------------------------------------------------------------
-// compute time-step by the CFL condition
-// -------------------------------------------------------------------
-// double ComputeTimestep( double U[N][5] )
-// {
-//     double P[N], a[N], u[N], v[N], w[N];
-//     double ua_max=0;
-//     for(int pos=0; pos<N; pos++)
-//     {
-//         P[pos] = ComputePressure( U[pos][0], U[pos][1], U[pos][2], U[pos][3], U[pos][4] );
-//         a[pos] = sqrt( gamma_val_val*P[pos]/U[pos][0] );
-//         u[pos] = abs( U[pos][1]/U[pos][0] );
-//         v[pos] = abs( U[pos][2]/U[pos][0] );
-//         w[pos] = abs( U[pos][3]/U[pos][0] );
 
-//         if(u[pos]+a[pos]>ua_max)    //find maximum
-//             ua_max = u[pos] + a[pos];
-//     }
-//     double max_info_speed = ua_max;
-//     //max_info_speed = std::max( ua )
-//     double dt_cfl         = cfl*dx/max_info_speed;
-//     double dt_end         = end_time - t;
-
-//     return min( dt_cfl, dt_end );
-// }
-
-// -------------------------------------------------------------------
-// compute limited slope
-// -------------------------------------------------------------------
-
-// vec5 Roe( double L[5], double R[5] )
-// {
-//     vec5 flux;
-
-//     //compute the enthalpy of the left and right states: H = (E+P)/rho
-//     double P_L = ComputePressure( L[0], L[1], L[2], L[3], L[4] );
-//     double P_R = ComputePressure( R[0], R[1], R[2], R[3], R[4] );
-//     double H_L = ( L[4] + P_L )/L[0];
-//     double H_R = ( R[4] + P_R )/R[0];
-
-//     //compute Roe average values
-//     double rhoL_sqrt = sqrt(L[0]);
-//     double rhoR_sqrt = sqrt(R[0]);
-
-//     double u  = ( L[1]/rhoL_sqrt + R[1]/rhoR_sqrt ) / ( rhoL_sqrt + rhoR_sqrt );
-//     double v  = ( L[2]/rhoL_sqrt + R[2]/rhoR_sqrt ) / ( rhoL_sqrt + rhoR_sqrt );
-//     double w  = ( L[3]/rhoL_sqrt + R[3]/rhoR_sqrt ) / ( rhoL_sqrt + rhoR_sqrt );
-//     double H  = ( rhoL_sqrt*H_L  + rhoR_sqrt*H_R  ) / ( rhoL_sqrt + rhoR_sqrt );
-//     double V2 = u*u + v*v + w*w;
-//     //check negative pressure
-//     //assert H-0.5*V2 > 0.0, "negative pressure!"
-//     double a  = sqrt( (gamma_val_val-1.0)*(H - 0.5*V2));
-
-//     //compute the amplitudes of different characteristic waves
-//     double dU[5];
-//     for(int i=0; i<5; i++){
-//         dU[i] = R[i] - L[i];
-//     }
-//     double amp[5] = {0};
-//     amp[2] = dU[2] - v*dU[0];
-//     amp[3] = dU[3] - w*dU[0];
-//     amp[1] = (gamma_val_val-1.0)/(a*a)*( dU[0]*(H-u*u) + u*dU[1] - dU[4] + v*amp[2] + w*amp[3] );
-//     amp[0] = (0.5/a)*( dU[0]*(u+a) - dU[1] - a*amp[1] );
-//     amp[4] = dU[0] - amp[0] - amp[1];
-
-
-//     // compute the eigenvalues and right eigenvector matrix
-//     double EigenValue[5]    = {u-a, u, u, u, u+a};
-//     double EigenVector_R[5][5] = {{1.0, u-a,   v,   w,  H-u*a},
-//                                   {1.0,   u,   v,   w, 0.5*V2},
-//                                   {0.0, 0.0, 1.0, 0.0,      v},
-//                                   {0.0, 0.0, 0.0, 1.0,      w},
-//                                   {1.0, u+a,   v,   w,  H+u*a}};
-
-//     //compute the fluxes of the left and right states
-//     vec5 flux_L_temp = Conserved2Flux( L );
-//     vec5 flux_R_temp = Conserved2Flux( R );
-    
-//     double flux_L[5] = {0};
-//     double flux_R[5] = {0};
-//     for(int i=0;i<5;i++)
-//     {
-//         flux_L[i] = flux_L_temp.u[i];
-//         flux_R[i] = flux_R_temp.u[i];
-//     }
-    
-//     //compute the Roe flux
-//     for(int i=0; i<5; i++){
-//         amp[i] = amp[i]*abs(EigenValue[i]);
-//     } 
-
-//     double temp[5] ={0}; //a temporary storeing matrix multipycation 
-//     for(int i=0; i<5; i++){
-//         for(int j=0; j<5; j++){
-//             temp[i] += amp[j]*EigenVector_R[j][i];
-//         }
-//     }
-    
-//     for(int i=0; i<5; i++)
-//     {
-//         flux.u[i] = 0.5*( flux_L[i] + flux_R[i] ) - 0.5*temp[i];
-//     }
-
-//     return flux;
-    
-// }
 double ComputeLimitedSlope(double L, double C, double R )
 {
 //  compute the left and right slopes
@@ -289,16 +135,16 @@ void Computehalf(double a_jl,double a_j, double a_jr, double slopel,double slope
 
     double a_jhr;
     double a_jhl;
-        a_jhr = a_j+(a_jr-a_j)/2.+1/6.*(slope-sloper);
-        a_jhl = a_jl+(a_j-a_jl)/2.+1/6.*(slopel-slope);
+        a_jhr = a_j+(a_jr-a_j)/2.+1./6.*(slope-sloper);
+        a_jhl = a_jl+(a_j-a_jl)/2.+1./6.*(slopel-slope);
     if((a_jhr-a_j)*(a_j-a_jhl)<=0.){
         a_jhr = a_j;
         a_jhl = a_j;
     }
-    else if((a_jhr-a_j)*(a_j-0.5*(a_jhl+a_jhr))>pow((a_jhr-a_jhl),2)/6.){
+    else if((a_jhr-a_jhl)*(a_j-0.5*(a_jhl+a_jhr))>pow((a_jhr-a_jhl),2)/6.){
         a_jhl = 3.*a_j-2.*a_jhr;
     }
-    else if((a_jhr-a_j)*(a_j-0.5*(a_jhl+a_jhr))<pow((a_jhr-a_jhl),2)/6.){
+    else if((a_jhr-a_jhl)*(a_j-0.5*(a_jhl+a_jhr))<-pow((a_jhr-a_jhl),2)/6.){
         a_jhr = 3.*a_j-2.*a_jhl;
     }
     a_jhalf[0]=a_jhl;
@@ -330,7 +176,8 @@ void DataReconstruction_PPM( double U[N][5],double dt,double gamma_val,double dx
     Computehalf(U[k-1][num], U[k][num], U[k+1][num], slope_x[k-1][num], slope_x[k][num], slope_x[k+1][num], a_jhalf);
     hvalue_x[k][num][0]=a_jhalf[0];
     hvalue_x[k][num][1]=a_jhalf[1];
- 
+
+
     }
     
     }    
@@ -338,28 +185,30 @@ void DataReconstruction_PPM( double U[N][5],double dt,double gamma_val,double dx
 
     for(int k=2; k<N-2; k++){
     for(int num=0; num<5; num++){
-    for(int num1=0; num1<3; num1++){
+  
     if(U[k][1]>0){
-    d_dxyz[k][num]=hvalue_x[k-1][num][1]-hvalue_x[k][num][1]-dt*U[k][1]/2.*((2.-2.*U[k][1]*dt)*(hvalue_x[k-1][num][0]-hvalue_x[k][num][0])+(4.-2.*U[k][1]*dt)*(hvalue_x[k-1][num][1]-hvalue_x[k][num][1])-(6.-4.*U[k][1]*dt)*(U[k-1][num]-U[k][num]));
-    }else{
-    d_dxyz[k][num]=hvalue_x[k][num][1]-hvalue_x[k+1][num][1]-dt*U[k][1]/2.*((2.-2.*U[k][1]*dt)*(hvalue_x[k][num][0]-hvalue_x[k+1][num][0])+(4.-2.*U[k][1]*dt)*(hvalue_x[k][num][1]-hvalue_x[k+1][num][1])+(6.+4.*U[k][1]*dt)*(U[k][num]-U[k+1][num]));
+    d_dxyz[k][num]=hvalue_x[k-1][num][1]-hvalue_x[k][num][1]-dt*U[k][1]/dx/2.*((2.-2.*U[k][1]*dt/dx)*(hvalue_x[k-1][num][0]-hvalue_x[k][num][0])+(4.-2.*U[k][1]*dt/dx)*(hvalue_x[k-1][num][1]-hvalue_x[k][num][1])-(6.-4.*U[k][1]*dt/dx)*(U[k-1][num]-U[k][num]));
+    }else {
+    d_dxyz[k][num]=hvalue_x[k][num][0]-hvalue_x[k+1][num][0]-dt*U[k][1]/dx/2.*((2.+2.*U[k][1]*dt/dx)*(hvalue_x[k][num][0]-hvalue_x[k+1][num][0])+(4.+2.*U[k][1]*dt/dx)*(hvalue_x[k][num][1]-hvalue_x[k+1][num][1])+(6.+4.*U[k][1]*dt/dx)*(U[k][num]-U[k+1][num]));
     }
+    // else{
+    //     d_dxyz[k][num]=(hvalue_x[k-1][num][1]-hvalue_x[k][num][1]+hvalue_x[k][num][0]-hvalue_x[k+1][num][0])/2.;
+    // }
     
     }
-    }
+    
     }
 
     for(int i=2; i<N-2; i++){
 
     //denaity
-    U_n1[i][0]=U[i][0]-dt/dx*(U[i][1]*d_dxyz[i][0]+U[i][0]*(d_dxyz[i][1]));
+    U_n1[i][0]=U[i][0]+dt/dx*(U[i][1]*d_dxyz[i][0]+U[i][0]*(d_dxyz[i][1]));
     //velosity_x
-    U_n1[i][1]=U[i][1]-dt/dx*(U[i][1]*d_dxyz[i][1]+d_dxyz[i][4]/U[i][0]);
-    //velosity_y
+    U_n1[i][1]=U[i][1]+dt/dx*(U[i][1]*d_dxyz[i][1]+d_dxyz[i][4]/U[i][0]);
    //pressure
-    U_n1[i][4]=U[i][4]-dt/dx*(gamma_val*U[i][4]*(d_dxyz[i][1])+U[i][1]*d_dxyz[i][4]);
+    U_n1[i][4]=U[i][4]+dt/dx*(gamma_val*U[i][4]*(d_dxyz[i][1])+U[i][1]*d_dxyz[i][4]);
      }
-     for(int i=2; i<N-2; i++){
+    for(int i=2; i<N-2; i++){
 
     //denaity
     U[i][0]=U_n1[i][0];
@@ -376,49 +225,11 @@ void DataReconstruction_PPM( double U[N][5],double dt,double gamma_val,double dx
     if(calmax[0]>calmax[1]){
         calmax[1]=calmax[0];}
     }
-    dt = dx/calmax[1];
- 
-
-}
-
-//----------------------------------------------------------------
-/*
-int main()
-{
-    double a[5] = {1.25e3, 0.0, 0.0, 0.0, 5.0e2};
-    vec5 b = Primitive2Conserved(a);
-    vec5 c = Conserved2Primitive(b.u);
-    for(int i=0; i<5; i++)
-    printf("%f  ",c.u[i]); 
-}
-*/
-// double Calculate_slope(double value[N][N][N] )
-// {
-//     double W[N][N][N][3]={0};
-//     //slope in x-axis
-//     for(int i=1; i<N-1; i++)
-//     for(int j=0; j<N; j++)
-//     for(int k=0; k<N; k++)
-//     double W[i][j][k][0]= std::min((value[N+1][N][N]-value[N-1][N][N])/2 ,(value[N+1][N][N]-value[N][N][N]),(value[N][N][N]-value[N-1][N][N])/2) ;
-//     ;;;
-//     //slope in y-axis
-//     for(int i=1; i<N-1; i++)
-//     for(int j=0; j<N; j++)
-//     for(int k=0; k<N; k++)
-//     double W[i][j][k][1]= std::min((value[N][N+1][N]-value[N][N-1][N])/2 ,(value[N][N+1][N]-value[N][N][N]),(value[N][N][N]-value[N][N-1][N])/2) ;
-//     ;;;
-//     //slope in z-axis
-//     for(int i=1; i<N-1; i++)
-//     for(int j=0; j<N; j++)
-//     for(int k=0; k<N; k++)
-//     double W[i][j][k][2]= std::min((value[N][N][N+1]-value[N][N][N-1])/2 ,(value[N][N][N+1]-value[N][N][N]),(value[N][N][N]-value[N][N][N-1])/2) ;
-//     ;;;
-     
-//     //assert np.all( P > 0 ), "negative pressure !!"
+    dt = dx/2./calmax[1];
     
-//     return W;
-//}
-//double Calculate_half(double value[N][N][N] )
+
+}
+
 
 int main()
 {
@@ -446,13 +257,9 @@ int main()
     if(calmax[0]>calmax[1]){
         calmax[1]=calmax[0];}
     }
-    dt = dx/calmax[1];
+    dt = dx/2./calmax[1];
     while (t >=0 )
     {
-        // Set boundary condition
-
-
-        // calculate time-step
 
 
 
@@ -460,53 +267,7 @@ int main()
         t=t+dt;
         fprintf( output, "t = %13.7e --> %13.7e, dt = %13.7e\n", t, t+dt, dt);
         printf("t = %13.7e --> %13.7e, dt = %13.7e\n", t, t+dt, dt);
-        //updat the face-center variales by 0.5*dt
-        // for(int pos=1; pos<N-1; pos++)
-        // {
-        //     double L_temp[5], R_temp[5];
-        //     for(int i=0; i<5; i++)
-        //     {
-        //         L_temp[i] = LR.L[pos][i];
-        //         R_temp[i] = LR.R[pos][i];
-        //         //printf("LR.L=%f\n",LR.L[pos][i]);
-        //     }
-
-        //     vec5 Flux_L, Flux_R;
-        //     Flux_L = Conserved2Flux(L_temp);
-        //     Flux_R = Conserved2Flux(R_temp);
-            
-        //     double dflux[5] = {0};
-        //     for(int i=0; i<5; i++)
-        //     {
-        //     dflux[i] = 0.5*dt/dx*(Flux_R.u[i]-Flux_L.u[i]);
-        //     //printf("dflux[%d][%d]=%f\n",pos,i,dflux[i]);
-        //     LR.L[pos][i] -= dflux[i];
-        //     LR.R[pos][i] -= dflux[i];
-        //     }
-        // }
-
-        //printf("debug : compute fluxes\n");
-        //compute fluxes
-        // double flux[N][5];
-        // for(int pos=nghost; pos<N-nghost+1; pos++)
-        // {
-        //     double R_temp[5], L_temp[5];
-        //     for(int i=0; i<5; i++)
-        //     {
-        //         R_temp[i] = LR.R[pos-1][i];
-        //         L_temp[i] = LR.L[pos][i];
-        //     }
-        //     // R_temp is the LEFT state at the j+1/2 interface
-        //     vec5 flux_temp = {0};
-        //     flux_temp = Roe(R_temp, L_temp);
-        //     for(int i=0; i<5; i++)
-        //     {
-        //         flux[pos][i] = flux_temp.u[i];
-        //         //printf("flux[%d][%d]=%f\n",pos,i,flux[pos][i]);
-        //     }
-        // }
-
-        // update the volume-averaged input variables by dt
+    
     for(int pos1=0; pos1<N; pos1++){
 
             // THIS LOOP IS FOR PRINT TO DATA
