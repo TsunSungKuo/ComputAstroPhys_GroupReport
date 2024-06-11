@@ -1,5 +1,5 @@
 # ComputAstroPhys_GroupReport
-`main_with_openmp.cpp`: main code with PLM and (half)PPM. after running the code, you will get a output file `output.txt`. The file can be read and graphed by `test_C_result.py`.
+`main_with_openmp.cpp`: main code with PLM and (half)PPM. after running the code, you will get a output file `output.txt`. The file can be read and graphed by `test_C_result.py`. `strong_shock.txt` is used for plotting the analytical solution. `main_single` is the version without parallelization.
 
 ## General Guidelines and Requirements
 1. Must parallelize your program by at least one of the following methods \
