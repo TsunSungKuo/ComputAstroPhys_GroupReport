@@ -1,6 +1,6 @@
 # ComputAstroPhys_GroupReport
 `main_with_openmp.cpp`: main code with PLM and (half)PPM. after running the code, you will get a output file `output.txt`. The file can be read and graphed by `test_C_result.py`. `strong_shock.txt` is used for plotting the analytical solution. `main_single` is the version without parallelization.
-`GWLW.py`: implement GP method into Sod's shock problem with Lax-Friedrichs method, `GPHK.py`: implement GP method into Sod's shock problem with MUSCL-Hancock method, 
+`GWLW.py`: implement GP method into Sod's shock problem with Lax-Friedrichs method, `GPHK.py`: implement GP method into Sod's shock problem with MUSCL-Hancock method, `Weno.py`: attempting utilize Weno method with replacing PLM, `likehood.py`: the basic likehood function in GP method, `weno_test.py`: the example of weno interpolation.
 
 ## General Guidelines and Requirements
 1. Must parallelize your program by at least one of the following methods \
