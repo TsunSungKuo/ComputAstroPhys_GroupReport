@@ -1,6 +1,6 @@
 # ComputAstroPhys_GroupReport
 `main_with_openmp.cpp`: main code with PLM and (half)PPM. after running the code, you will get a output file `output.txt`. The file can be read and graphed by `test_C_result.py`. `strong_shock.txt` is used for plotting the analytical solution. `main_single` is the version without parallelization.
-
+`PPM1Dtext.cpp`:That is a failed PPM. If you run this code, you will get a divergent result.`PPMtxet.cpp`:A film doesn't finish for 3D PPM.`textfilm.cpp`:A half PPM. If you run this code, you will get a result called `output.txt`.
 `GWLW.py`: implement GP method into Sod's shock problem with Lax-Friedrichs method, `GPHK.py`: implement GP method into Sod's shock problem with MUSCL-Hancock method, `Weno.py`: attempting utilize Weno method with replacing PLM, debuging negative pressure, `likehood.py`: the basic likehood function about hyperparameters in GP method, `weno_test.py`: the example of weno interpolation, can generate a iteration result compare to a sinusoidal function.
 
 ## General Guidelines and Requirements
